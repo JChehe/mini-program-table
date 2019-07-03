@@ -1,0 +1,195 @@
+<template>
+    <view class="table-fixed">
+        <!-- S 固定列 -->
+        <view class="table__fixed-columns">
+            <view class="table__fixed-common tr">
+                <view class="fixed-th th"
+                    wx:for="{{fixedCols[0]}}"
+                    wx:key="{{index}}"
+                    style="width: {{colWidths[index]}}rpx;">
+                    {{item}}
+                </view>
+            </view>
+            <scroll-view class="table__fixed-others"
+                scroll-y
+                scroll-top="{{scrollTop}}">
+                <view wx:for="{{firstColsOther}}"
+                    wx:for-item="row"
+                    wx:for-index="rowIndex"
+                    wx:key="{{rowIndex}}"
+                    class="tr">
+                    <view class="td"
+                        wx:for="{{row}}"
+                        wx:for-item="col"
+                        wx:for-index="colIndex"
+                        wx:key="{{colIndex}}"
+                        style="width: {{colWidths[colIndex]}}rpx;">
+                        {{col}}
+                    </view>
+                </view>
+            </scroll-view>
+        </view>
+        <!-- E 固定列 -->
+        <scroll-view class="table"
+            scroll-x>
+            <!-- S 固定表头 -->
+            <view class="thead"
+                style="width: {{totalWidth}}rpx;">
+                <view class="tr">
+                    <view class="th"
+                        wx:for="{{thead}}"
+                        wx:key="{{index}}"
+                        style="width: {{colWidths[index]}}rpx;">{{item}}</view>
+                </view>
+            </view>
+            <!-- E 固定表头 -->
+            <scroll-view class="tbody"
+                scroll-y
+                throttle="{{false}}"
+                @scroll="scrollVertical"
+                style="width: {{totalWidth}}rpx;">
+                <view class="tr"
+                    wx:for="{{tbody}}"
+                    wx:for-item="tr"
+                    wx:for-index="trIndex"
+                    wx:key="{{trIndex}}">
+                    <view class="td"
+                        wx:for="{{tr}}"
+                        wx:for-item="td"
+                        wx:for-index="tdIndex"
+                        wx:key="{{tdIndex}}"
+                        style="width: {{colWidths[tdIndex]}}rpx;">{{td}}</view>
+                </view>
+            </scroll-view>
+        </scroll-view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy'
+
+    const FAKE_DATA = [
+        ['保单年度', '年龄', '当年生存金', '累积生存金', '账户价值', '我是测试']
+    ]
+    const count = 100
+    const age = 30
+    for(let i = 0; i < count; i++) {
+        FAKE_DATA.push([
+            i,
+            age + i,
+            400,
+            500,
+            600,
+            700
+        ])
+    }
+
+    export default class Table extends wepy.component {
+        data = {
+            table: FAKE_DATA,
+            colWidths: [
+                160, 80, 200, 200, 160, 160
+            ],
+            fixedColsNum: 2,
+            scrollTop: 0
+        }
+        computed = {
+            totalWidth () {
+                let result = 0
+                this.colWidths.forEach(item => result += item)
+                return result
+            },
+            fixedCols () {
+                const result = []
+                this.table.forEach(row => {
+                    result.push(row
+                        .slice(0, this.fixedColsNum)
+                        .map(col => col))
+                })
+                return result
+            },
+            firstColsOther () {
+                return this.fixedCols.slice(1)
+            },
+            thead () {
+                return this.table[0]
+            },
+            tbody () {
+                return this.table.slice(1)
+            }
+        }
+        methods = {
+            scrollVertical (event) {
+                const scrollTop = event.detail.scrollTop
+                this.scrollTop = scrollTop
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .table-fixed {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .table__fixed-columns {
+        position: absolute;
+        left: 0;
+        background-color: #fff;
+        z-index: 100;
+        pointer-events: none;
+    }
+
+    .table__fixed-others {
+        height: 400rpx;
+    }
+
+    .table {
+        width: 750rpx;
+    }
+
+    .tbody {
+        height: 400rpx;
+    }
+
+    .tr {
+        white-space: nowrap;
+        overflow: hidden;
+        font-size: 0;
+
+        &:nth-child(even) {
+            background-color: #FAFAFA;
+        }
+    }
+
+    $borderColor: #E6E6E6;
+
+    .td,
+    .th {
+        box-sizing: border-box;
+        text-align: center;
+        display: inline-block;
+        color: #666;
+        border-right: 1px solid $borderColor;
+        border-bottom: 1px solid $borderColor;
+
+        &:first-child {
+            border-left: 1px solid $borderColor;
+        }
+    }
+
+    .th {
+        font-size: 24rpx;
+        line-height: 34rpx;
+        padding: 6rpx 0;
+        border-top: 1px solid $borderColor;
+    }
+
+    .td {
+        font-size: 28rpx;
+        line-height: 40rpx;
+        padding: 16rpx 0;
+    }
+
+</style>

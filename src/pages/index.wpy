@@ -1,0 +1,39 @@
+<template>
+  <view class="container">
+    <table></table>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import table from '../components/table'
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: 'test'
+    }
+    components = {
+        table
+    }
+
+    mixins = []
+
+    data = {
+    }
+
+    computed = {
+    }
+
+    methods = {
+
+    }
+
+    events = {
+
+    }
+
+    onLoad() {
+
+    }
+  }
+</script>
