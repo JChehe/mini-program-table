@@ -2,6 +2,7 @@
     <view class="table-fixed">
         <!-- S 固定列 -->
         <view class="table__fixed-columns">
+            <!-- S 横竖方向都要固定的左上角单元格 -->
             <view class="table__fixed-common tr">
                 <view class="fixed-th th"
                     wx:for="{{fixedCols[0]}}"
@@ -10,9 +11,13 @@
                     {{item}}
                 </view>
             </view>
+            <!-- E 横竖方向都要固定的左上角单元格 -->
+
+            <!-- S 固定列（除表头） -->
             <scroll-view class="table__fixed-others"
                 scroll-y
-                scroll-top="{{scrollTop}}">
+                scroll-top="{{scrollTop}}"
+                style="height: {{tbodyHeight}}rpx;">
                 <view wx:for="{{firstColsOther}}"
                     wx:for-item="row"
                     wx:for-index="rowIndex"
@@ -28,26 +33,33 @@
                     </view>
                 </view>
             </scroll-view>
+            <!-- E 固定列（除表头） -->
         </view>
         <!-- E 固定列 -->
+
+        <!-- S 完整的表格 -->
         <scroll-view class="table"
             scroll-x>
-            <!-- S 固定表头 -->
+            <!-- S 固定表头（完整） -->
             <view class="thead"
                 style="width: {{totalWidth}}rpx;">
                 <view class="tr">
                     <view class="th"
                         wx:for="{{thead}}"
                         wx:key="{{index}}"
-                        style="width: {{colWidths[index]}}rpx;">{{item}}</view>
+                        style="width: {{colWidths[index]}}rpx;">
+                        {{item}}
+                    </view>
                 </view>
             </view>
-            <!-- E 固定表头 -->
+            <!-- E 固定表头（完整） -->
+
+            <!-- S tbody（完整） -->
             <scroll-view class="tbody"
                 scroll-y
                 throttle="{{false}}"
                 @scroll="scrollVertical"
-                style="width: {{totalWidth}}rpx;">
+                style="width: {{totalWidth}}rpx; height: {{tbodyHeight}}rpx;">
                 <view class="tr"
                     wx:for="{{tbody}}"
                     wx:for-item="tr"
@@ -58,71 +70,126 @@
                         wx:for-item="td"
                         wx:for-index="tdIndex"
                         wx:key="{{tdIndex}}"
-                        style="width: {{colWidths[tdIndex]}}rpx;">{{td}}</view>
+                        style="width: {{colWidths[tdIndex]}}rpx;">
+                        {{td}}
+                    </view>
                 </view>
             </scroll-view>
+            <!-- S tbody（完整） -->
         </scroll-view>
+        <!-- E 完整的表格 -->
     </view>
 </template>
 
 <script>
     import wepy from 'wepy'
+    import utils from '@/utils/index'
 
-    const FAKE_DATA = [
-        ['保单年度', '年龄', '当年生存金', '累积生存金', '账户价值', '我是测试']
-    ]
-    const count = 100
-    const age = 30
-    for(let i = 0; i < count; i++) {
-        FAKE_DATA.push([
-            i,
-            age + i,
-            400,
-            500,
-            600,
-            700
-        ])
-    }
+    const getTextWidth = utils.getTextWidth
 
     export default class Table extends wepy.component {
-        data = {
-            table: FAKE_DATA,
-            colWidths: [
-                160, 80, 200, 200, 160, 160
-            ],
-            fixedColsNum: 2,
-            scrollTop: 0
-        }
-        computed = {
-            totalWidth () {
-                let result = 0
-                this.colWidths.forEach(item => result += item)
-                return result
+        props = {
+            table: {
+                type: Array,
+                required: true
             },
-            fixedCols () {
-                const result = []
-                this.table.forEach(row => {
-                    result.push(row
-                        .slice(0, this.fixedColsNum)
-                        .map(col => col))
-                })
-                return result
+            fixedColsNum: {
+                type: [Number, String],
+                default: 1
             },
-            firstColsOther () {
-                return this.fixedCols.slice(1)
-            },
-            thead () {
-                return this.table[0]
-            },
-            tbody () {
-                return this.table.slice(1)
+            tbodyHeight: {
+                type: [Number, String],
+                default: 504
             }
         }
+
+        data = {
+            colWidths: [],
+            scrollTop: 0,
+            totalWidth: 0,
+            fixedCols: [],
+            firstColsOther: [],
+            thead: [],
+            tbody: []
+        }
+
+        watch = {
+            /**
+             * $apply() 的触发都会导致 computed 属性内所有值都运行一次，
+             * 即使 computed 属性所依赖的属性未变更。
+             * 故通过 watch 判断依赖属性是否发生更改，避免不必的繁重运算。
+             */
+            table () {
+                this.init()
+                this.$apply()
+            }
+        }
+
         methods = {
             scrollVertical (event) {
                 const scrollTop = event.detail.scrollTop
                 this.scrollTop = scrollTop
             }
+        }
+
+        init () {
+            this.colWidths = this.getColWidths()
+            this.totalWidth = this.getTotalWidth()
+            this.fixedCols = this.getFixedCols()
+            this.firstColsOther = this.getFirstColsOther()
+            this.thead = this.getThead()
+            this.tbody = this.getTbody()
+        }
+
+        getTbody () {
+            return this.table.slice(1)
+        }
+
+        getThead () {
+            return this.table[0]
+        }
+
+        getFirstColsOther () {
+            return this.fixedCols.slice(1)
+        }
+
+        getFixedCols (table) {
+            const result = []
+            this.table.forEach(row => {
+                result.push(row
+                    .slice(0, this.fixedColsNum)
+                    .map(col => col))
+            })
+            return result
+        }
+
+        getTotalWidth () {
+            return this.colWidths.reduce((acc, cur) => {
+                return acc + cur
+            })
+        }
+
+        /**
+         * 计算每列的宽度，依据单元格的字符串像素宽度
+         */
+        getColWidths () {
+            const table = this.table
+            const result = []
+            const TH_FONT_SIZE = 24
+            const TD_FONT_SIZE = 28
+            const SCALE_RATIO = 1.5
+            for (let colIndex = 0, colLen = table[0].length; colIndex < colLen; colIndex++) {
+                let maxWidth = getTextWidth(table[0][colIndex], TH_FONT_SIZE)
+                for (let rowIndex = 1, rowLen = table.length; rowIndex < rowLen; rowIndex++) {
+                    const cell = table[rowIndex][colIndex]
+                    const cellWidth = getTextWidth(cell, TD_FONT_SIZE)
+                    if (cellWidth > maxWidth) {
+                        maxWidth = cellWidth
+                    }
+                }
+                result.push(Math.ceil(maxWidth * SCALE_RATIO))
+            }
+            return result
         }
     }
 </script>
@@ -138,19 +205,11 @@
         left: 0;
         background-color: #fff;
         z-index: 100;
-        pointer-events: none;
-    }
-
-    .table__fixed-others {
-        height: 400rpx;
+        pointer-events: none; // 固定列不接受触摸，相当于滚动表格本身
     }
 
     .table {
-        width: 750rpx;
-    }
-
-    .tbody {
-        height: 400rpx;
+        width: 100%;
     }
 
     .tr {
@@ -168,8 +227,8 @@
     .td,
     .th {
         box-sizing: border-box;
-        text-align: center;
         display: inline-block;
+        text-align: center;
         color: #666;
         border-right: 1px solid $borderColor;
         border-bottom: 1px solid $borderColor;
@@ -188,7 +247,7 @@
 
     .td {
         font-size: 28rpx;
-        line-height: 40rpx;
+        line-height: 38rpx;
         padding: 16rpx 0;
     }
 

@@ -1,39 +1,55 @@
 <template>
-  <view class="container">
-    <table></table>
-  </view>
+    <view class="container">
+        <table
+            :table.sync="tableData"></table>
+    </view>
 </template>
 
 <script>
-  import wepy from 'wepy'
-  import table from '../components/table'
+    import wepy from 'wepy'
+    import table from '../components/table'
 
-  export default class Index extends wepy.page {
-    config = {
-      navigationBarTitleText: 'test'
-    }
-    components = {
-        table
-    }
+    const FAKE_DATA = [
+        ['Full Name', 'Age', 'Column 1', 'Column 2', 'Column 3', 'Column 4']
+    ]
 
-    mixins = []
+    const count = 100
+    const age = 30
 
-    data = {
-    }
-
-    computed = {
-    }
-
-    methods = {
-
+    for (let i = 0; i < count; i++) {
+        FAKE_DATA.push([
+            i,
+            age + i,
+            400,
+            5,
+            6666,
+            70
+        ])
     }
 
-    events = {
+    export default class Index extends wepy.page {
+        config = {
+            navigationBarTitleText: '固定表头和首N列'
+        }
+        components = {
+            table
+        }
 
+        data = {
+            tableData: []
+        }
+
+        onLoad() {
+            this.$nextTick(() => {
+                this.tableData = FAKE_DATA
+                this.$apply()
+            })
+        }
     }
-
-    onLoad() {
-
-    }
-  }
 </script>
+
+<style lang="scss" scoped>
+    .container {
+        padding: 20rpx 40rpx;
+    }
+</style>
