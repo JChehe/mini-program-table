@@ -1,7 +1,8 @@
 <template>
     <view class="container">
         <table
-            :table.sync="tableData"></table>
+            :table.sync="tableData"
+            fixedColsNum="2"></table>
     </view>
 </template>
 
